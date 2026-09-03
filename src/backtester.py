@@ -1,13 +1,15 @@
 import pandas as pd
-from strategy import MovingAverageStrategy
-from portfolio import Portfolio
+from src.strategy import MovingAverageStrategy
+from src.portfolio import Portfolio
+from src.position_sizer import PercentageOfEquitySizer
 
 class Backtester:
 
-    def __init__(self, data: pd.DataFrame, strategy: MovingAverageStrategy, portfolio: Portfolio):
+    def __init__(self, data: pd.DataFrame, strategy: MovingAverageStrategy, portfolio: Portfolio, sizer: PercentageOfEquitySizer):
         self.data = data.copy()
         self.strategy = strategy
         self.portfolio = portfolio
+        self.sizer = sizer
         self.trades = []
         self.data["Equity"] = 0.0
         self.entry_price = None
@@ -66,8 +68,16 @@ class Backtester:
                 self.data.iloc[:i + 1]
             )
 
-            target = signal
+            equity = self.portfolio.update_equity(
+                self.data["Close"].iloc[i]
+            )
 
+            target = self.sizer.get_target_position(
+                signal,
+                equity,
+                self.data["Close"].iloc[i]
+            )
+            
             quantity = target - self.portfolio.position
 
             # Schedule order for next day's open

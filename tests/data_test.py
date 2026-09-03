@@ -3,6 +3,7 @@ from src.strategy import MovingAverageStrategy
 from src.portfolio import Portfolio
 from src.backtester import Backtester
 from src.performance import PerformanceAnalyzer
+from src.position_sizer import PercentageOfEquitySizer
 
 
 df = load_data(
@@ -15,12 +16,15 @@ strategy = MovingAverageStrategy(
     short_window=20,
     long_window=50
 )
-portfolio = Portfolio(2000)
+portfolio = Portfolio(20000)
+
+sizer = PercentageOfEquitySizer(1.0)
 
 backtester = Backtester(
     df,
     strategy,
-    portfolio
+    portfolio,
+    sizer
 )
 
 results = backtester.run()

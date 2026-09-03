@@ -32,9 +32,9 @@ class PerformanceAnalyzer:
 
         return traded_value / self.initial_capital
 
-    def summary(self, trades):
+    def summary(self):
 
-        stats = self.trade_stats(trades)
+        stats = self.trade_stats(self.trades)
 
         return {
             "Initial Capital": self.initial_capital,
@@ -42,7 +42,7 @@ class PerformanceAnalyzer:
             "Total Return": self.total_return(),
             "Sharpe Ratio": self.sharpe_ratio(),
             "Max Drawdown": self.max_drawdown(),
-            "Turnover": self.turnover()
+            "Turnover": self.turnover(),
             **stats
         }
 
