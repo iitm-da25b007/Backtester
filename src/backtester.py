@@ -13,6 +13,7 @@ class Backtester:
         self.trades = []
         self.data["Equity"] = 0.0
         self.entry_price = None
+        self.entry_cost = None
 
     def run(self):
 
@@ -36,19 +37,37 @@ class Backtester:
                         "Date": self.data.index[i],
                         "Action": "BUY" if quantity > 0 else "SELL",
                         "Quantity": abs(quantity),
-                        "Price": execution_price
+                        "Price": float(execution_price)
                     }
 
                     if quantity > 0:
                         self.entry_price = execution_price
 
+                        self.entry_cost = (
+                            quantity
+                            * execution_price
+                            * self.portfolio.transaction_cost
+                        )
+
                     elif quantity < 0:
 
-                        pnl = (
+                        gross_pnl = (
                             execution_price - self.entry_price
                         ) * abs(quantity)
 
-                        trade["PnL"] = pnl
+                        exit_cost = (
+                            abs(quantity)
+                            * execution_price
+                            * self.portfolio.transaction_cost
+                        )
+
+                        transaction_cost = self.entry_cost + exit_cost
+
+                        net_pnl = gross_pnl - transaction_cost
+
+                        trade["Gross PnL"] = float(gross_pnl)
+                        trade["Transaction Cost"] = float(transaction_cost)
+                        trade["Net PnL"] = float(net_pnl)
 
                         self.entry_price = None
 

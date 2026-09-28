@@ -8,7 +8,8 @@ class PerformanceAnalyzer:
         self.trades = trades
 
     def total_return(self):
-        return self.equity.iloc[-1] / self.initial_capital - 1
+        return (self.equity.iloc[-1] / self.initial_capital) - 1
+
     
     def daily_returns(self):
         return self.equity.pct_change()
@@ -38,11 +39,11 @@ class PerformanceAnalyzer:
 
         return {
             "Initial Capital": self.initial_capital,
-            "Final Equity": self.equity.iloc[-1],
-            "Total Return": self.total_return(),
-            "Sharpe Ratio": self.sharpe_ratio(),
-            "Max Drawdown": self.max_drawdown(),
-            "Turnover": self.turnover(),
+            "Final Equity": float(self.equity.iloc[-1]),
+            "Total Return": float(self.total_return()),
+            "Sharpe Ratio": float(self.sharpe_ratio()),
+            "Max Drawdown": float(self.max_drawdown()),
+            "Turnover": float(self.turnover()),
             **stats
         }
 
@@ -50,13 +51,13 @@ class PerformanceAnalyzer:
 
         closed_trades = [
             trade for trade in trades
-            if "PnL" in trade
+            if "Net PnL" in trade
         ]
 
         if not closed_trades:
             return {}
 
-        pnls = [trade["PnL"] for trade in closed_trades]
+        pnls = [trade["Net PnL"] for trade in closed_trades]
 
         wins = [pnl for pnl in pnls if pnl > 0]
         losses = [pnl for pnl in pnls if pnl < 0]
@@ -66,10 +67,10 @@ class PerformanceAnalyzer:
             "Winning Trades": len(wins),
             "Losing Trades": len(losses),
             "Win Rate": len(wins) / len(pnls),
-            "Average Win": sum(wins) / len(wins) if wins else 0,
-            "Average Loss": sum(losses) / len(losses) if losses else 0,
+            "Average Win": float(sum(wins) / len(wins)) if wins else 0,
+            "Average Loss": float(sum(losses) / len(losses)) if losses else 0,
             "Profit Factor": (
-                sum(wins) / abs(sum(losses))
+                float(sum(wins) / abs(sum(losses)))
                 if losses else float("inf")
             )
         }
