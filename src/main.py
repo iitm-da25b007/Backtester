@@ -30,11 +30,13 @@ backtester = Backtester(
 results = backtester.run()
 
 analyzer = PerformanceAnalyzer(
-    results["Equity"],
+    results,
     portfolio.initial_cash,
     backtester.trades
 )
 
-print(results)
-print(backtester.trades)
-print(analyzer.summary())
+summary = analyzer.summary()
+
+print(summary)
+
+analyzer.plot_equity_curve()

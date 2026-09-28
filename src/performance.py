@@ -1,15 +1,22 @@
 import pandas as pd
 import math
+import matplotlib.pyplot as plt
 class PerformanceAnalyzer:
 
-    def __init__(self, equity: pd.Series, initial_capital, trades: dict):
-        self.equity = equity
+    def __init__(self, data: pd.DataFrame, initial_capital, trades: dict):
+        self.data = data
+        self.equity = data["Equity"]
         self.initial_capital = initial_capital
         self.trades = trades
 
     def total_return(self):
         return (self.equity.iloc[-1] / self.initial_capital) - 1
 
+    def buy_and_hold_return(self):
+        start_price = self.data["Close"].iloc[0]
+        end_price = self.data["Close"].iloc[-1]
+
+        return (end_price / start_price) - 1
     
     def daily_returns(self):
         return self.equity.pct_change()
@@ -35,22 +42,23 @@ class PerformanceAnalyzer:
 
     def summary(self):
 
-        stats = self.trade_stats(self.trades)
+        stats = self.trade_stats()
 
         return {
             "Initial Capital": self.initial_capital,
             "Final Equity": float(self.equity.iloc[-1]),
             "Total Return": float(self.total_return()),
+            "Buy & Hold Return": self.buy_and_hold_return(),
             "Sharpe Ratio": float(self.sharpe_ratio()),
             "Max Drawdown": float(self.max_drawdown()),
             "Turnover": float(self.turnover()),
             **stats
         }
 
-    def trade_stats(self, trades):
+    def trade_stats(self):
 
         closed_trades = [
-            trade for trade in trades
+            trade for trade in self.trades
             if "Net PnL" in trade
         ]
 
@@ -74,3 +82,20 @@ class PerformanceAnalyzer:
                 if losses else float("inf")
             )
         }
+
+    def plot_equity_curve(self):
+        buy_hold_equity = (self.data["Close"] 
+                           / self.data["Close"].iloc[0]
+                           ) * self.initial_capital
+        plt.figure(figsize=(10, 5))
+
+        plt.plot(self.equity.index, self.equity, label="Strategy")
+        plt.plot(buy_hold_equity.index, buy_hold_equity, label="Buy & Hold")
+
+        plt.title("Equity Curve")
+        plt.xlabel("Date")
+        plt.ylabel("Portfolio Equity")
+
+        plt.legend()
+        plt.grid(True)
+        plt.show()
