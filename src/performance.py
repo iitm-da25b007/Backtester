@@ -3,7 +3,7 @@ import math
 import matplotlib.pyplot as plt
 class PerformanceAnalyzer:
 
-    def __init__(self, data: pd.DataFrame, initial_capital, trades: dict):
+    def __init__(self, data: pd.DataFrame, initial_capital, trades: list):
         self.data = data
         self.equity = data["Equity"]
         self.initial_capital = initial_capital
