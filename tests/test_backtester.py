@@ -101,3 +101,68 @@ def test_position_size_uses_signal_day_close():
     assert trade["Action"] == "BUY"
     assert trade["Price"] == 200
     assert trade["Quantity"] == 4
+
+def test_multiple_buys_use_average_entry_price():
+
+    class FixedSignalStrategy:
+
+        def __init__(self):
+            self.calls = 0
+
+        def generate_signal(self, data):
+            if self.calls < 3:
+                signal = 1
+            else:
+                signal = 0
+
+            self.calls += 1
+            return signal
+
+    class FixedSizer:
+
+        def get_target_position(self, signal, equity, price):
+            if signal == 1:
+                if price == 100:
+                    return 10
+                return 12
+
+            return 0
+
+    data = pd.DataFrame({
+        "Open": [100, 100, 110, 120, 130],
+        "High": [105, 105, 115, 125, 135],
+        "Low": [95, 95, 105, 115, 125],
+        "Close": [100, 100, 110, 120, 130],
+        "Volume": [1000, 1000, 1000, 1000, 1000]
+    })
+
+    strategy = FixedSignalStrategy()
+    portfolio = Portfolio(
+        5000,
+        transaction_cost=0.0,
+        slippage=0.0
+    )
+    sizer = FixedSizer()
+
+    backtester = Backtester(
+        data,
+        strategy,
+        portfolio,
+        sizer
+    )
+
+    backtester.run()
+
+    buy_1 = backtester.trades[0]
+    buy_2 = backtester.trades[1]
+    sell_trade = backtester.trades[2]
+
+    assert buy_1["Action"] == "BUY"
+    assert buy_1["Quantity"] == 10
+
+    assert buy_2["Action"] == "BUY"
+    assert buy_2["Quantity"] == 2
+
+    assert sell_trade["Action"] == "SELL"
+    assert sell_trade["Quantity"] == 12
+    assert sell_trade["Gross PnL"] > 0

@@ -16,7 +16,7 @@ strategy = MovingAverageStrategy(
     short_window=20,
     long_window=50
 )
-portfolio = Portfolio(20000)
+portfolio = Portfolio(20000,slippage=0.001)
 
 sizer = PercentageOfEquitySizer(1.0)
 

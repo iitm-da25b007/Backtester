@@ -13,7 +13,7 @@ class Backtester:
         self.trades = []
         self.data["Equity"] = 0.0
         self.entry_price = None
-        self.entry_cost = None
+        self.entry_cost = 0.0
 
     def run(self):
 
@@ -27,7 +27,7 @@ class Backtester:
                 quantity = pending_order
                 execution_price = self.data["Open"].iloc[i]
 
-                status = self.portfolio.execute_order(
+                status, fill_price = self.portfolio.execute_order(
                     quantity,
                     execution_price
                 )
@@ -38,41 +38,73 @@ class Backtester:
                         "Date": self.data.index[i],
                         "Action": "BUY" if quantity > 0 else "SELL",
                         "Quantity": abs(quantity),
-                        "Price": float(execution_price)
+                        "Price": float(fill_price)
                     }
 
                     if quantity > 0:
 
-                        self.entry_price = execution_price
-                        self.entry_cost = (
-                            quantity
-                            * execution_price
-                            * self.portfolio.transaction_cost
-                        )
+                        buy_value = quantity * fill_price
+                        buy_cost = (buy_value * self.portfolio.transaction_cost)
+
+                        if self.portfolio.position - quantity > 0:
+
+                            old_position = (self.portfolio.position - quantity)
+
+                            total_position_value = (
+                                old_position * self.entry_price
+                                + buy_value
+                            )
+
+                            self.entry_price = (total_position_value / self.portfolio.position)
+                            self.entry_cost += buy_cost
+
+                        else:
+
+                            self.entry_price = fill_price
+                            self.entry_cost = buy_cost
 
                     elif quantity < 0:
 
+                        sell_quantity = abs(quantity)
+
                         gross_pnl = (
-                            execution_price
-                            - self.entry_price
-                        ) * abs(quantity)
+                            fill_price - self.entry_price
+                        ) * sell_quantity
 
                         exit_cost = (
-                            abs(quantity)
-                            * execution_price
+                            sell_quantity
+                            * fill_price
                             * self.portfolio.transaction_cost
                         )
 
-                        transaction_cost = (self.entry_cost + exit_cost)
+                        entry_cost_per_share = (
+                            self.entry_cost
+                            / (self.portfolio.position + sell_quantity)
+                        )
 
-                        net_pnl = (gross_pnl - transaction_cost)
+                        entry_cost_for_trade = (
+                            entry_cost_per_share * sell_quantity
+                        )
+
+                        transaction_cost = (
+                            entry_cost_for_trade
+                            + exit_cost
+                        )
+
+                        net_pnl = (
+                            gross_pnl
+                            - transaction_cost
+                        )
 
                         trade["Gross PnL"] = float(gross_pnl)
                         trade["Transaction Cost"] = float(transaction_cost)
                         trade["Net PnL"] = float(net_pnl)
 
-                        self.entry_price = None
-                        self.entry_cost = None
+                        self.entry_cost -= entry_cost_for_trade
+
+                        if self.portfolio.position == 0:
+                            self.entry_price = None
+                            self.entry_cost = 0.0
 
                     self.trades.append(trade)
 
@@ -102,7 +134,7 @@ class Backtester:
                 self.data["Close"].iloc[i]
             )
 
-            quantity = (target - self.portfolio.position)
+            quantity = target - self.portfolio.position
 
             # Schedule order for tomorrow's Open
             if quantity != 0 and i + 1 < len(self.data):
