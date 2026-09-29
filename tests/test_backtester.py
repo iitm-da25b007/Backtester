@@ -69,7 +69,7 @@ def test_trade_pnl():
     assert sell_trade["Action"] == "SELL"
     assert sell_trade["Net PnL"] < 0
 
-def test_position_size_uses_execution_open():
+def test_position_size_uses_signal_day_close():
 
     data = pd.DataFrame({
         "Open": [100, 100, 200, 200],
@@ -100,4 +100,4 @@ def test_position_size_uses_execution_open():
 
     assert trade["Action"] == "BUY"
     assert trade["Price"] == 200
-    assert trade["Quantity"] == 2
+    assert trade["Quantity"] == 4

@@ -17,84 +17,72 @@ class Backtester:
 
     def run(self):
 
-        pending_signal = None
+        pending_order = None
 
         for i in range(len(self.data)):
 
-            if pending_signal is not None:
+            # Execute pending order at today's Open
+            if pending_order is not None:
 
+                quantity = pending_order
                 execution_price = self.data["Open"].iloc[i]
 
-                # Calculate today's equity using today's Open
-                equity = self.portfolio.update_equity(
+                status = self.portfolio.execute_order(
+                    quantity,
                     execution_price
                 )
 
-                # Calculate position using today's Open
-                target = self.sizer.get_target_position(
-                    pending_signal,
-                    equity,
-                    execution_price
-                )
+                if status == "FILLED":
 
-                quantity = (target - self.portfolio.position)
+                    trade = {
+                        "Date": self.data.index[i],
+                        "Action": "BUY" if quantity > 0 else "SELL",
+                        "Quantity": abs(quantity),
+                        "Price": float(execution_price)
+                    }
 
-                # Execute order
-                if quantity != 0:
+                    if quantity > 0:
 
-                    status = self.portfolio.execute_order(
-                        quantity,
-                        execution_price
-                    )
+                        self.entry_price = execution_price
+                        self.entry_cost = (
+                            quantity
+                            * execution_price
+                            * self.portfolio.transaction_cost
+                        )
 
-                    if status == "FILLED":
+                    elif quantity < 0:
 
-                        trade = {
-                            "Date": self.data.index[i],
-                            "Action": "BUY" if quantity > 0 else "SELL",
-                            "Quantity": abs(quantity),
-                            "Price": float(execution_price)
-                        }
+                        gross_pnl = (
+                            execution_price
+                            - self.entry_price
+                        ) * abs(quantity)
 
-                        if quantity > 0:
+                        exit_cost = (
+                            abs(quantity)
+                            * execution_price
+                            * self.portfolio.transaction_cost
+                        )
 
-                            self.entry_price = execution_price
-                            self.entry_cost = (
-                                quantity
-                                * execution_price
-                                * self.portfolio.transaction_cost
-                            )
+                        transaction_cost = (self.entry_cost + exit_cost)
 
-                        elif quantity < 0:
+                        net_pnl = (gross_pnl - transaction_cost)
 
-                            gross_pnl = (
-                                execution_price
-                                - self.entry_price
-                            ) * abs(quantity)
+                        trade["Gross PnL"] = float(gross_pnl)
+                        trade["Transaction Cost"] = float(transaction_cost)
+                        trade["Net PnL"] = float(net_pnl)
 
-                            exit_cost = (
-                                abs(quantity)
-                                * execution_price
-                                * self.portfolio.transaction_cost
-                            )
+                        self.entry_price = None
+                        self.entry_cost = None
 
-                            transaction_cost = (self.entry_cost + exit_cost)
+                    self.trades.append(trade)
 
-                            net_pnl = (gross_pnl - transaction_cost)
-
-                            trade["Gross PnL"] = float(gross_pnl)
-                            trade["Transaction Cost"] = float(transaction_cost)
-                            trade["Net PnL"] = float(net_pnl)
-
-                            self.entry_price = None
-                            self.entry_cost = None
-
-                        self.trades.append(trade)
-
-                pending_signal = None
+                pending_order = None
 
             # Calculate end-of-day equity
-            self.data.loc[self.data.index[i], "Equity"] = self.portfolio.update_equity(
+            self.data.loc[
+                self.data.index[i],
+                "Equity"
+            ] = self.portfolio.update_equity(
                 self.data["Close"].iloc[i]
             )
 
@@ -103,12 +91,28 @@ class Backtester:
                 self.data.iloc[:i + 1]
             )
 
-            # Store signal for tomorrow
-            if i + 1 < len(self.data):
-                pending_signal = signal
+            # Calculate position at today's Close
+            equity = self.portfolio.update_equity(
+                self.data["Close"].iloc[i]
+            )
+
+            target = self.sizer.get_target_position(
+                signal,
+                equity,
+                self.data["Close"].iloc[i]
+            )
+
+            quantity = (target - self.portfolio.position)
+
+            # Schedule order for tomorrow's Open
+            if quantity != 0 and i + 1 < len(self.data):
+                pending_order = quantity
 
         # Final equity
-        self.data.loc[self.data.index[-1], "Equity"] = self.portfolio.update_equity(
+        self.data.loc[
+            self.data.index[-1],
+            "Equity"
+        ] = self.portfolio.update_equity(
             self.data["Close"].iloc[-1]
         )
 
