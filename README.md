@@ -12,7 +12,6 @@ A simple Python backtesting engine built from scratch to understand how trading 
 * Maximum drawdown
 * Turnover
 * Transaction costs & slippage
-* Look-ahead bias experiments
 
 ## Goal
 
@@ -20,4 +19,4 @@ The main goal is to understand the complete pipeline:
 
 **Market Data → Signal → Order → Execution → Portfolio → Performance**
 
-and learn how common backtesting issues such as **look-ahead bias, survivorship bias, and transaction costs** affect results.
+and learn how common backtesting issues such as **survivorship bias, and transaction costs** affect results.
