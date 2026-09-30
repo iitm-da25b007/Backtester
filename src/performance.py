@@ -1,6 +1,7 @@
 import pandas as pd
 import math
 import matplotlib.pyplot as plt
+
 class PerformanceAnalyzer:
 
     def __init__(self, data: pd.DataFrame, initial_capital, trades: list):
@@ -39,6 +40,23 @@ class PerformanceAnalyzer:
             for trade in self.trades)
 
         return traded_value / self.initial_capital
+
+    def print_summary(self):
+
+        summary = self.summary()
+
+        print("\n===== Backtest Results =====")
+
+        for key, value in summary.items():
+            if isinstance(value, float):
+                print(f"{key}: {value:.4f}")
+            else:
+                print(f"{key}: {value}")
+
+        print("\nTrades:")
+
+        for trade in self.trades:
+            print(trade)
 
     def summary(self):
 

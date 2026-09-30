@@ -35,8 +35,4 @@ analyzer = PerformanceAnalyzer(
     backtester.trades
 )
 
-summary = analyzer.summary()
-
-print(summary)
-
-analyzer.plot_equity_curve()
+analyzer.print_summary()
