@@ -1,23 +1,18 @@
+import pandas as pd
+
+
 class MovingAverageStrategy:
 
     def __init__(self, short_window=20, long_window=50):
         self.short_window = short_window
         self.long_window = long_window
 
-    def generate_signal(self, data):
+    def prepare_indicators(self, data: pd.DataFrame):
+        df = data.copy()
+        df["Short_MA"] = df["Close"].rolling(self.short_window).mean()
+        df["Long_MA"] = df["Close"].rolling(self.long_window).mean()
 
-        if len(data) < self.long_window:
-            return 0
+        df["Raw_Signal"] = (df["Short_MA"] > df["Long_MA"]).astype(int)
 
-        short_ma = data["Close"].rolling(
-            self.short_window
-        ).mean()
-
-        long_ma = data["Close"].rolling(
-            self.long_window
-        ).mean()
-
-        if short_ma.iloc[-1] > long_ma.iloc[-1]:
-            return 1
-
-        return 0
+        df.iloc[: self.long_window - 1, df.columns.get_loc("Raw_Signal")] = 0
+        return df

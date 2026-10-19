@@ -2,6 +2,7 @@ import pandas as pd
 import math
 import matplotlib.pyplot as plt
 
+
 class PerformanceAnalyzer:
 
     def __init__(self, data: pd.DataFrame, initial_capital, trades: list):
@@ -18,7 +19,7 @@ class PerformanceAnalyzer:
         end_price = self.data["Close"].iloc[-1]
 
         return (end_price / start_price) - 1
-    
+
     def daily_returns(self):
         return self.equity.pct_change()
 
@@ -26,7 +27,7 @@ class PerformanceAnalyzer:
         returns = self.daily_returns().dropna()
         if returns.std() == 0:
             return 0.0
-        return (returns.mean()/ returns.std()) * (math.sqrt(252))
+        return (returns.mean() / returns.std()) * (math.sqrt(252))
 
     def max_drawdown(self):
         peak = self.equity.cummax()
@@ -35,9 +36,7 @@ class PerformanceAnalyzer:
 
     def turnover(self):
 
-        traded_value = sum(
-            trade["Quantity"] * trade["Price"]
-            for trade in self.trades)
+        traded_value = sum(trade["Quantity"] * trade["Price"] for trade in self.trades)
 
         return traded_value / self.initial_capital
 
@@ -70,15 +69,12 @@ class PerformanceAnalyzer:
             "Sharpe Ratio": float(self.sharpe_ratio()),
             "Max Drawdown": float(self.max_drawdown()),
             "Turnover": float(self.turnover()),
-            **stats
+            **stats,
         }
 
     def trade_stats(self):
 
-        closed_trades = [
-            trade for trade in self.trades
-            if "Net PnL" in trade
-        ]
+        closed_trades = [trade for trade in self.trades if "Net PnL" in trade]
 
         if not closed_trades:
             return {}
@@ -96,15 +92,14 @@ class PerformanceAnalyzer:
             "Average Win": float(sum(wins) / len(wins)) if wins else 0,
             "Average Loss": float(sum(losses) / len(losses)) if losses else 0,
             "Profit Factor": (
-                float(sum(wins) / abs(sum(losses)))
-                if losses else float("inf")
-            )
+                float(sum(wins) / abs(sum(losses))) if losses else float("inf")
+            ),
         }
 
     def plot_equity_curve(self):
-        buy_hold_equity = (self.data["Close"] 
-                           / self.data["Close"].iloc[0]
-                           ) * self.initial_capital
+        buy_hold_equity = (
+            self.data["Close"] / self.data["Close"].iloc[0]
+        ) * self.initial_capital
         plt.figure(figsize=(10, 5))
 
         plt.plot(self.equity.index, self.equity, label="Strategy")

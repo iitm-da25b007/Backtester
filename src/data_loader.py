@@ -1,13 +1,9 @@
 import yfinance as yf
 
+
 def load_data(ticker, start, end):
 
-    data = yf.download(
-        ticker,
-        start=start,
-        end=end,
-        auto_adjust=False
-    )
+    data = yf.download(ticker, start=start, end=end, auto_adjust=False)
 
     data = data.droplevel("Ticker", axis=1)
 
